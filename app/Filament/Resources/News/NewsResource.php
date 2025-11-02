@@ -20,7 +20,11 @@ class NewsResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = '内容管理';
+    protected static ?string $recordTitleAttribute = 'title';
+
+    protected static ?string $modelLabel = "内容";
+
+    protected static ?string $pluralModelLabel = "内容管理";
 
     public static function form(Schema $schema): Schema
     {

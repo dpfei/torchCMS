@@ -18,11 +18,13 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
+    protected static ?string $recordTitleAttribute = "cat_name";
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = "栏目管理";
-
     protected static ?string $pluralModelLabel = "栏目管理";
+
+    protected static ?string $modelLabel = "栏目";
 
     public static function form(Schema $schema): Schema
     {
