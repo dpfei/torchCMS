@@ -6,9 +6,9 @@ use App\Models\Category;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\BooleanColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -18,44 +18,46 @@ class CategoriesTable
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label(__('id'))
+                    ->sortable(),
                 TextColumn::make('cat_name')
-                    ->label('栏目名称')
+                    ->label(__('category.cat_name'))
                     ->sortable()
                     ->searchable(),
 
                 TextColumn::make('parent.cat_name')
-                    ->label('父级栏目')
+                    ->label(__('category.parent_id'))
                     ->sortable()
                     ->placeholder('顶级栏目'),
 
                 ImageColumn::make('thumb')
-                    ->label('缩略图'),
+                    ->label(__('thumb')),
 
                 TextColumn::make('description')
-                    ->label('描述')
+                    ->label(__('description'))
                     ->limit(50),
 
                 TextColumn::make('sort')
-                    ->label('排序')
+                    ->label(__('sort'))
                     ->sortable(),
 
-                BooleanColumn::make('is_menu')
-                    ->label('是否显示在菜单')
-                    ->sortable(),
+                ToggleColumn::make('is_menu')
+                    ->label(__('category.is_menu')),
 
                 TextColumn::make('created_at')
-                    ->label('创建时间')
+                    ->label(__('created_at'))
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('parent_id')
-                    ->label('父级栏目')
+                    ->label(__('category.parent_id'))
                     ->options(Category::getOptionList())
                     ->placeholder('全部分类'),
 
                 SelectFilter::make('is_menu')
-                    ->label('是否显示在菜单')
+                    ->label(__('category.is_menu'))
                     ->options([
                         1 => '是',
                         0 => '否',

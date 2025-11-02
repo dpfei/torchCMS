@@ -1,4 +1,12 @@
 {
     "welcome":"欢迎使用",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "id": "ID",
+    "thumb": "封面图",
+    "description": "描述",
+    "sort": "排序",
+    "created_at":"创建时间",
+    "updated_at":"更新时间",
+    "keywords": "关键词",
+    "status":"状态"
 }
