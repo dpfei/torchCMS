@@ -10,12 +10,10 @@ class ListCategories extends ListRecords
 {
     protected static string $resource = CategoryResource::class;
 
-    protected static ?string $breadcrumb = '列表';
-
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('新建'),
+            CreateAction::make(),
         ];
     }
 }
