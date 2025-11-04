@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasDateTimeFormatterTrait;
 
 class News extends Model
 {
-    use HasFactory;
+    use HasFactory, HasDateTimeFormatterTrait;
+
+    const STATUS_DISABLED = 0;
+    const STATUS_ENABLED = 1;
 
     /**
      * 表名
@@ -15,34 +19,6 @@ class News extends Model
      * @var string
      */
     protected $table = 'news';
-
-    /**
-     * 主键
-     *
-     * @var string
-     */
-    protected $primaryKey = 'id';
-
-    /**
-     * 主键类型
-     *
-     * @var string
-     */
-    protected $keyType = 'int';
-
-    /**
-     * 是否自增
-     *
-     * @var bool
-     */
-    public $incrementing = true;
-
-    /**
-     * 时间戳
-     *
-     * @var bool
-     */
-    public $timestamps = true;
 
     /**
      * 可填充字段
@@ -97,7 +73,7 @@ class News extends Model
         'external_url' => 'string',
         'sort' => 'integer',
         'status' => 'integer',
-        'input_time' => 'integer',
+        'input_time' => 'datetime',
         'content' => 'string',
         'readpoint' => 'integer',
         'copyfrom' => 'string',
@@ -120,5 +96,13 @@ class News extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public static function getStatusOptions()
+    {
+        return [
+            self::STATUS_DISABLED => '禁用',
+            self::STATUS_ENABLED => '启用',
+        ];
     }
 }
