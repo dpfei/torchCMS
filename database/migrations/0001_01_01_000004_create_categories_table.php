@@ -22,15 +22,15 @@ return new class extends Migration
             $table->datetime('created_at')->nullable()->comment('创建时间');
             $table->datetime('updated_at')->nullable()->comment('编辑时间');
             $table->datetime('deleted_at')->nullable()->comment('删除时间');
-            
+
             // 主键
             $table->primary('id');
-            
+
             // 设置引擎和字符集
             $table->engine = 'InnoDB';
             $table->charset = 'utf8';
-            $table->collation = 'utf8_unicode_ci';
-            
+            $table->collation = 'utf8_general_ci';
+
             // 表备注
             $table->comment('新闻分类表');
         });

@@ -35,7 +35,7 @@ return new class extends Migration {
             $table->index(['cat_id', 'status', 'id'], 'catid')->comment('分类状态索引');
 
             // 设置引擎和字符集
-            $table->engine = 'MyISAM';
+            $table->engine = 'InnoDB';
             $table->charset = 'utf8';
             $table->collation = 'utf8_general_ci';
         });
