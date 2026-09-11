@@ -417,12 +417,20 @@ class Installer
             $logs[] = '已切换为生产模式（关闭调试输出）';
         }
 
-        if (! empty($options['site_url'])) {
-            $env->set(['APP_URL' => rtrim((string) $options['site_url'], '/')]);
+        // 站点名与独立的 Cookie 名一并落地，避免与同域名下的其它应用共用 laravel-session 互相覆盖
+        $envValues = ['SESSION_COOKIE' => 'torchcms_session'];
+
+        if (! empty($options['site_name'])) {
+            $envValues['APP_NAME'] = $options['site_name'];
         }
 
-        Artisan::call('config:clear');
-        Artisan::call('view:clear');
+        if (! empty($options['site_url'])) {
+            $envValues['APP_URL'] = rtrim((string) $options['site_url'], '/');
+        }
+
+        $env->set($envValues);
+
+        Artisan::call('optimize:clear');
         $logs[] = '缓存已清理';
 
         self::markInstalled([

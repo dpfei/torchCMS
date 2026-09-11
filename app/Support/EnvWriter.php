@@ -140,10 +140,17 @@ class EnvWriter
             return '';
         }
 
-        if (preg_match('/\s/', $value) || str_contains($value, '#') || str_contains($value, '"')) {
-            return '"'.str_replace('"', '\"', $value).'"';
+        // 无需引号即可安全解析的简单值
+        if (! preg_match('/[\s#\'"$\\\\]/', $value)) {
+            return $value;
         }
 
-        return $value;
+        // Dotenv 只会对双引号（或裸值）做变量插值，单引号内的 $ 是字面量。
+        // 因此优先用单引号包裹，避免密码里的 $ 被当成变量而丢失。
+        if (str_contains($value, "'")) {
+            return '"'.str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $value).'"';
+        }
+
+        return "'".$value."'";
     }
 }

@@ -203,6 +203,17 @@ routes/web.php             安装路由 + 前台路由
 **访问任何页面都被跳转到 `/install`**
 系统未检测到安装信息。若确认数据库已初始化，检查 `.env` 的数据库配置是否正确；锁文件缺失时会自动探测数据库中的管理员表并补写 `storage/installed.lock`。
 
+**后台登录后又被弹回登录页，且看不到任何错误提示**
+
+这是「登录表单没有真正走 Livewire」或「Livewire 请求被拒绝」的典型表现，绝大多数情况不是密码错误（密码错 Filament 会明确提示）。按下面顺序排查：
+
+1. `APP_URL` 必须与浏览器实际访问的协议、域名、端口完全一致——装完后换过域名、加了 HTTPS 最容易踩到。改完执行 `php artisan optimize:clear`
+2. 若站点由 Nginx 终止 HTTPS，需要把协议透传给 PHP：`fastcgi_param HTTPS on;` 与 `fastcgi_param HTTP_X_FORWARDED_PROTO $scheme;`。否则页面会按 `http` 去加载 Filament/Livewire 资源，被浏览器当作混合内容拦掉，表单会退化成普通提交，一刷新就回到登录页
+3. 打开浏览器开发者工具提交一次登录：**没有** `livewire/update` 请求说明前端资源没加载（看 Console 红色报错）；状态码 `419` 说明会话没保持住；`500` 则查 `storage/logs/laravel.log`
+4. 确认会话确实写入了：`php artisan tinker --execute="echo DB::table('sessions')->count();"`，登录一次后该数字应当增加
+5. 同一域名下并存多个 Laravel 应用时，为本站设置独立的 `SESSION_COOKIE`，避免共用 `laravel-session` 互相覆盖
+6. 临时把 `.env` 的 `APP_DEBUG` 改为 `true` 再试一次，可直接看到被隐藏的真实异常
+
 **上传的图片显示 404**
 未创建软链接，执行 `php artisan storage:link`。
 
