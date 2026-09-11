@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
+use App\Http\Middleware\RedirectIfNotInstalled;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
@@ -37,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class
             ])
             ->middleware([
+                RedirectIfNotInstalled::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
