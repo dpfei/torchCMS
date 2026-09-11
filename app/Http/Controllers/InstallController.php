@@ -127,6 +127,7 @@ class InstallController extends Controller
                 'site_url' => url('/'),
                 'admin_name' => '超级管理员',
                 'admin_email' => Installer::DEFAULT_ADMIN_EMAIL,
+                'admin_password' => Installer::generatePassword(),
             ],
         ]);
     }

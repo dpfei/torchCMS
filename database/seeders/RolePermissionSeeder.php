@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Admin;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Installer;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -75,15 +76,24 @@ class RolePermissionSeeder extends Seeder
                 ->get()
         );
 
-        // 5. 默认超级管理员账号
+        // 5. 默认超级管理员账号：密码随机生成，避免留下公开的弱口令账号
+        //    网页安装向导随后会用用户在第 3 步填写的邮箱与密码覆盖同名账号
+        $defaultPassword = Installer::generatePassword();
+
         $admin = Admin::query()->firstOrCreate(
-            ['email' => 'admin@torchcms.com'],
+            ['email' => Installer::DEFAULT_ADMIN_EMAIL],
             [
                 'name' => '超级管理员',
-                'password' => 'password',
+                'password' => $defaultPassword,
             ]
         );
+
         $admin->syncRoles([$superAdmin]);
+
+        if ($admin->wasRecentlyCreated && $this->command) {
+            $this->command->warn('已创建默认管理员：'.Installer::DEFAULT_ADMIN_EMAIL.'，初始密码：'.$defaultPassword);
+            $this->command->warn('请登录后台后立即修改该密码。');
+        }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

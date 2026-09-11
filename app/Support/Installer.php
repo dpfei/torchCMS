@@ -9,6 +9,7 @@ use Database\Seeders\DemoContentSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use PDO;
 use Throwable;
 
@@ -22,6 +23,14 @@ class Installer
     public const MIN_PHP = '8.3.0';
 
     public const DEFAULT_ADMIN_EMAIL = 'admin@torchcms.com';
+
+    /**
+     * 生成初始管理员密码：字母 + 数字，不使用符号，便于复制与手抄
+     */
+    public static function generatePassword(int $length = 16): string
+    {
+        return Str::password($length, symbols: false);
+    }
 
     /**
      * 安装锁文件路径
@@ -393,6 +402,17 @@ class Installer
         self::applyDatabaseConfig($env);
         $logs[] = '数据库连接配置已就绪（'.$env->get('DB_CONNECTION', 'sqlite').'）';
 
+        // 管理员密码盐：首次安装时自动生成并固化。重复安装必须沿用原值，
+        // 否则数据库里已有的管理员密码会全部失效。
+        $salt = (string) $env->get('ADMIN_PASSWORD_SALT');
+
+        if ($salt === '') {
+            $salt = Str::random(40);
+            $env->set(['ADMIN_PASSWORD_SALT' => $salt]);
+        }
+
+        config(['admin.password_salt' => $salt]);
+
         Artisan::call('migrate', ['--force' => true]);
         $logs[] = '数据表结构迁移完成';
 
@@ -463,7 +483,10 @@ class Installer
      */
     protected static function saveAdministrator(array $options): void
     {
-        $admin = Admin::query()->orderBy('id')->first() ?? new Admin();
+        // 优先复用与所填邮箱一致的账号，避免覆盖到不相干的历史管理员
+        $admin = Admin::query()->where('email', $options['admin_email'])->first()
+            ?? Admin::query()->orderBy('id')->first()
+            ?? new Admin();
 
         $admin->fill([
             'name' => $options['admin_name'],

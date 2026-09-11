@@ -49,12 +49,13 @@
         <div class="grid">
             <div class="field">
                 <label for="admin_password">管理员密码</label>
-                <input type="password" name="admin_password" id="admin_password" required autocomplete="new-password">
+                <input type="password" name="admin_password" id="admin_password" value="{{ old('admin_password', $values['admin_password']) }}" required autocomplete="new-password">
+                <p class="hint">已自动生成强密码，可直接使用，也可以改成自己的。</p>
                 @error('admin_password') <p class="hint" style="color:#b91c1c">{{ $message }}</p> @enderror
             </div>
             <div class="field">
                 <label for="admin_password_confirmation">确认密码</label>
-                <input type="password" name="admin_password_confirmation" id="admin_password_confirmation" required autocomplete="new-password">
+                <input type="password" name="admin_password_confirmation" id="admin_password_confirmation" value="{{ old('admin_password_confirmation', $values['admin_password']) }}" required autocomplete="new-password">
             </div>
         </div>
 
