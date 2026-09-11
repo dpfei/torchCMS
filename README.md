@@ -7,6 +7,7 @@
 - 权限：`spatie/laravel-permission`，内置超级管理员 / 内容编辑 / 只读三档角色
 - 安装：内置网页安装向导（`/install`），也可用命令行部署
 - 安全：管理员密码带应用级盐值，后台登录自带验证码
+- 语言：默认简体中文，后台界面（Filament）与前台文案共用 `.env` 的 `APP_LOCALE` 配置
 
 ---
 
@@ -19,7 +20,9 @@
 | Node.js | >= 18 |
 | 数据库 | MySQL 5.7+ / MariaDB / PostgreSQL / SQLite |
 
-必需的 PHP 扩展：`ctype`、`curl`、`dom`、`fileinfo`、`json`、`mbstring`、`openssl`、`pdo`、`tokenizer`、`xml`，以及至少一个 `pdo_mysql` / `pdo_sqlite` / `pdo_pgsql` 驱动。
+必需的 PHP 扩展：`ctype`、`curl`、`dom`、`fileinfo`、`json`、`mbstring`、`openssl`、`pdo`、`tokenizer`、`xml`、`gd`，以及至少一个 `pdo_mysql` / `pdo_sqlite` / `pdo_pgsql` 驱动。
+
+> `gd` 用于绘制后台登录验证码，未启用时会自动降级为文字算术题，功能不受影响。
 
 建议启用：`gd`、`intl`、`zip`、`bcmath`。
 
@@ -205,6 +208,17 @@ routes/web.php             安装路由 + 前台路由
 ---
 
 ### 常见问题
+
+**后台 / 前台界面是英文，想改成中文**
+
+界面语言由 `.env` 的 `APP_LOCALE` 决定，Filament 后台直接跟随它（没有单独的面板语言开关）。本项目默认值为 `zh_CN`，已存在的部署升级后请确认自己的 `.env` 也是中文：
+
+```bash
+APP_LOCALE=zh_CN
+APP_FALLBACK_LOCALE=en   # 保留英文兜底，个别未翻译的文案会回落到英文
+```
+
+改完执行 `php artisan config:clear` 再刷新页面。若要改回英文，把 `APP_LOCALE` 设为 `en` 即可，后台与前台会一并切换。
 
 **访问任何页面都被跳转到 `/install`**
 系统未检测到安装信息。若确认数据库已初始化，检查 `.env` 的数据库配置是否正确；锁文件缺失时会自动探测数据库中的管理员表并补写 `storage/installed.lock`。

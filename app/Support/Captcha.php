@@ -78,15 +78,26 @@ class Captcha
         $code = self::randomCode();
         self::store($code);
 
-        $width = 132;
-        $height = 44;
+        // 内置位图字体 font 5 已是最大字号，字符尺寸固定（约 9×15 像素）无法再调大。
+        // 而图片在页面上按固定高度等比缩放，因此画布留白越多、字符显示得越小。
+        // 这里把画布收紧到刚好容纳字符，显示时字就被明显放大。
+        $font = 5;
+        $charWidth = imagefontwidth($font);
+        $charHeight = imagefontheight($font);
+
+        $length = strlen($code);
+        $marginX = 6;
+        $step = $charWidth + 6;
+
+        $width = $marginX * 2 + $step * $length;
+        $height = $charHeight + 12;
 
         $image = imagecreatetruecolor($width, $height);
         $background = imagecolorallocate($image, 245, 246, 248);
         imagefilledrectangle($image, 0, 0, $width, $height, $background);
 
         // 干扰线
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 3; $i++) {
             $line = imagecolorallocate(
                 $image,
                 random_int(175, 220),
@@ -98,7 +109,7 @@ class Captcha
         }
 
         // 噪点
-        for ($i = 0; $i < 80; $i++) {
+        for ($i = 0; $i < 25; $i++) {
             $dot = imagecolorallocate(
                 $image,
                 random_int(160, 225),
@@ -110,9 +121,6 @@ class Captcha
         }
 
         // 逐字符绘制，位置与颜色随机
-        $length = strlen($code);
-        $step = (int) floor(($width - 24) / $length);
-
         for ($i = 0; $i < $length; $i++) {
             $color = imagecolorallocate(
                 $image,
@@ -123,22 +131,18 @@ class Captcha
 
             imagestring(
                 $image,
-                5,
-                14 + $i * $step + random_int(-3, 3),
-                random_int(6, 18),
+                $font,
+                $marginX + $i * $step + random_int(-2, 2),
+                random_int(3, 9),
                 $code[$i],
                 $color
             );
         }
 
-        // 放大以拉开笔画间距，同时让内置字体不那么规整
-        $scaled = imagescale($image, $width * 2, $height * 2);
-        imagedestroy($image);
-
         ob_start();
-        imagepng($scaled);
+        imagepng($image);
         $binary = (string) ob_get_clean();
-        imagedestroy($scaled);
+        imagedestroy($image);
 
         return new Response($binary, 200, [
             'Content-Type' => 'image/png',

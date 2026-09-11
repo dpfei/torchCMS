@@ -7,8 +7,8 @@ use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Schema;
-use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 
@@ -73,10 +73,12 @@ class Login extends BaseLogin
     protected function getCaptchaFormComponent(): Component
     {
         return TextInput::make('captcha')
-            ->label(__('验证码'))
+            ->label('验证码')
             ->required()
             ->autocomplete('off')
-            ->hint(fn (): HtmlString => new HtmlString(
+            // inlineLabel 让标题与输入框同排，afterContent 把验证码图片贴在输入框右侧
+            ->inlineLabel()
+            ->afterContent(fn (): Html => Html::make(
                 view('filament.captcha', [
                     'image' => Captcha::supportsImage(),
                     'prompt' => $this->captchaPrompt,
