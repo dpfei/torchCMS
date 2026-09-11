@@ -30,9 +30,16 @@ class CategoryForm
                     ->required()
                     ->maxLength(255),
 
+                TextInput::make('slug')
+                    ->label('URL 别名')
+                    ->maxLength(191)
+                    ->unique(ignoreRecord: true)
+                    ->helperText('留空将根据栏目名称自动生成（中文自动转拼音）'),
+
                 FileUpload::make('thumb')
                     ->label('缩略图')
                     ->image()
+                    ->disk('public')
                     ->directory('categories')
                     ->maxSize(1024),
 

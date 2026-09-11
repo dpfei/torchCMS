@@ -26,13 +26,24 @@ class CategoriesTable
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('slug')
+                    ->label('URL 别名')
+                    ->copyable()
+                    ->url(fn (?Category $record): ?string => $record ? route('category.show', $record) : null)
+                    ->openUrlInNewTab()
+                    ->limit(40)
+                    ->tooltip('点击预览前台页面')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('parent.cat_name')
                     ->label(__('category.parent_id'))
                     ->sortable()
                     ->placeholder('顶级栏目'),
 
                 ImageColumn::make('thumb')
-                    ->label(__('thumb')),
+                    ->label(__('thumb'))
+                    ->disk('public')
+                    ->height(40),
 
                 TextColumn::make('description')
                     ->label(__('description'))

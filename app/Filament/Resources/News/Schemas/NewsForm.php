@@ -25,10 +25,18 @@ class NewsForm
                 TextInput::make('title')
                     ->label(__('news.title'))
                     ->required(),
+                TextInput::make('slug')
+                    ->label('URL 别名')
+                    ->maxLength(191)
+                    ->unique(ignoreRecord: true)
+                    ->helperText('留空将根据标题自动生成（中文自动转拼音），前台地址形如 /news/别名')
+                    ->columnSpanFull(),
                 FileUpload::make('thumb')
                     ->label(__('thumb'))
                     ->image()
+                    ->disk('public')
                     ->directory('news')
+                    ->maxSize(2048)
                     ->required(),
                 TextInput::make('keywords')
                     ->label(__('keywords'))
