@@ -51,7 +51,17 @@ php artisan serve
 
 安装向导会自动完成：生成 `APP_KEY` → 写入数据库配置 → 迁移数据表 → 初始化权限、角色与系统设置 → 创建超级管理员 → 创建 `public/storage` 软链接。
 
-安装完成后会把入口自动关闭（访问 `/install` 跳转到后台）。**重新安装**：删除 `storage/installed.lock` 后重新访问 `/install`（注意这会覆盖 `.env` 与数据库中的相关数据）。
+安装完成后会把入口自动关闭（访问 `/install` 会跳转到后台）。
+
+**重新安装**：仅删除 `storage/installed.lock` **不会**重新进入安装向导。锁文件缺失时 `Installer::isInstalled()` 会回落到探测数据库，只要 `admins`、`settings` 表仍存在且至少有一个管理员，就判定为已安装并自动重建锁文件，`/install` 依旧被重定向到 `/admin`（该逻辑用于避免老部署升级后被误导向安装向导）。真正重装需要先让探测失败：
+
+```bash
+php artisan db:wipe --force   # 删除数据库中的全部表，不可恢复
+rm -f storage/installed.lock
+php artisan optimize:clear
+```
+
+再访问 `/install`。SQLite 部署则删除 `database/database.sqlite` 后重新创建空文件。
 
 #### 方式二：命令行部署
 
@@ -221,4 +231,19 @@ routes/web.php             安装路由 + 前台路由
 未构建前端资源，执行 `npm run build`（或 `npm run dev`）。
 
 **想重新安装**
-删除 `storage/installed.lock` 后访问 `/install`，或清空数据库后重新执行迁移与种子。
+
+只删 `storage/installed.lock` 不起作用：锁文件缺失时 `Installer::isInstalled()` 会回落到探测数据库，只要 `admins` 与 `settings` 表存在、且至少有一条管理员记录，就判定为「已安装」并自动补写锁文件，`/install` 于是又被重定向到 `/admin`。必须先让这个探测失败：
+
+```bash
+php artisan db:wipe --force
+rm -f storage/installed.lock
+php artisan optimize:clear
+```
+
+SQLite 部署则删除 `database/database.sqlite` 并重建空文件。**注意这会清空全部数据。**
+
+如果只是想恢复后台访问，不需要重装，直接重置管理员密码即可：
+
+```bash
+php artisan tinker --execute="\$a=App\Models\Admin::first();\$a->password='新密码';\$a->save();echo \$a->email;"
+```
