@@ -10,6 +10,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Support\Enums\IconSize;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -43,10 +44,18 @@ class MediaTable
                     ->placeholder('-'),
 
                 // 地址列不摆一长串 URL，直接给出看得见的结果：图片显示缩略图，
-                // 其它文件显示文件图标，点一下都能在新标签页打开原文件
+                // 其它文件显示文件图标；单元格整格可点，在当前页弹窗预览
                 TextColumn::make('url')
                     ->label('地址')
-                    ->formatStateUsing(fn (Media $record): HtmlString => static::preview($record)),
+                    ->formatStateUsing(fn (Media $record): HtmlString => static::preview($record))
+                    ->action(
+                        Action::make('preview')
+                            ->modalHeading(fn (Media $record): string => $record->name)
+                            ->modalWidth(fn (Media $record): Width => $record->isImage() ? Width::FourExtraLarge : Width::Medium)
+                            ->modalContent(fn (Media $record): View => view('filament.media-preview', ['media' => $record]))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('关闭'),
+                    ),
 
                 TextColumn::make('admin.name')
                     ->label('上传人')
@@ -109,10 +118,10 @@ class MediaTable
     }
 
     /**
-     * 「地址」列的内容：图片直接显示缩略图，其它文件显示文件图标
+     * 「地址」列的内容：图片显示缩略图，其它文件显示文件图标
      *
-     * 两种结果都带链接，点开就是文件的原始地址（图片的地址因此依然拿得到）。
-     * 这里返回 HtmlString 而不是纯文本，是为了在单元格里直接画出图片 / 图标。
+     * 单元格本身是可点击的（由列上的 preview 动作接管），点击后在本页弹窗预览，
+     * 不再跳到新标签页。这里返回 HtmlString 而不是纯文本，是为了在单元格里直接画出图片 / 图标。
      */
     protected static function preview(Media $record): HtmlString
     {
@@ -122,28 +131,16 @@ class MediaTable
             return new HtmlString('-');
         }
 
-        $href = e($url);
-        $name = e((string) $record->name);
-        $linkStyle = 'display: inline-flex; align-items: center; color: inherit;';
-
         if ($record->isImage()) {
+            $href = e($url);
+            $name = e((string) $record->name);
             $imageStyle = 'display: block; height: 40px; width: auto; max-width: 120px;'
                 . ' object-fit: cover; border-radius: 6px; border: 1px solid rgba(0, 0, 0, .1);';
 
-            return new HtmlString(
-                "<a href=\"{$href}\" target=\"_blank\" rel=\"noopener\" title=\"{$name}\" style=\"{$linkStyle}\">"
-                . "<img src=\"{$href}\" alt=\"{$name}\" loading=\"lazy\" style=\"{$imageStyle}\">"
-                . '</a>'
-            );
+            return new HtmlString("<img src=\"{$href}\" alt=\"{$name}\" loading=\"lazy\" style=\"{$imageStyle}\">");
         }
 
-        // 非图片文件给一个文件图标，标题里带上文件名，点开即可查看原文件
-        $icon = generate_icon_html(Heroicon::OutlinedDocument, size: IconSize::Large)?->toHtml() ?? '';
-
-        return new HtmlString(
-            "<a href=\"{$href}\" target=\"_blank\" rel=\"noopener\" title=\"打开文件：{$name}\" style=\"{$linkStyle}\">"
-            . $icon
-            . '</a>'
-        );
+        // 非图片文件给一个文件图标，点开弹窗里能看到文件信息并打开原文件
+        return new HtmlString(generate_icon_html(Heroicon::OutlinedDocument, size: IconSize::Large)?->toHtml() ?? '');
     }
 }
