@@ -49,14 +49,28 @@
         <div class="grid">
             <div class="field">
                 <label for="admin_password">管理员密码</label>
-                <input type="password" name="admin_password" id="admin_password" value="{{ old('admin_password', $values['admin_password']) }}" required autocomplete="new-password">
+                <div class="input-affix">
+                    <input type="password" name="admin_password" id="admin_password" value="{{ old('admin_password', $values['admin_password']) }}" required autocomplete="new-password">
+                    <button type="button" class="reveal" data-reveal="admin_password">显示</button>
+                </div>
                 <p class="hint">已自动生成强密码，可直接使用，也可以改成自己的。</p>
                 @error('admin_password') <p class="hint" style="color:#b91c1c">{{ $message }}</p> @enderror
             </div>
             <div class="field">
                 <label for="admin_password_confirmation">确认密码</label>
-                <input type="password" name="admin_password_confirmation" id="admin_password_confirmation" value="{{ old('admin_password_confirmation', $values['admin_password']) }}" required autocomplete="new-password">
+                <div class="input-affix">
+                    <input type="password" name="admin_password_confirmation" id="admin_password_confirmation" value="{{ old('admin_password_confirmation', $values['admin_password']) }}" required autocomplete="new-password">
+                    <button type="button" class="reveal" data-reveal="admin_password_confirmation">显示</button>
+                </div>
             </div>
+        </div>
+
+        <div class="secret">
+            <div>
+                <span class="label">本次安装使用的管理员密码 · 提交后无法再次查看，请先保存或复制</span>
+                <code id="admin_password_plain">{{ old('admin_password', $values['admin_password']) }}</code>
+            </div>
+            <button type="button" class="copy" data-copy-from="admin_password_plain">复制</button>
         </div>
 
         <label class="switch">

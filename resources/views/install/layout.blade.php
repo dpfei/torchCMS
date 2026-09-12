@@ -112,6 +112,39 @@
         .field .hint { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 
+        /* 密码框内的「显示 / 隐藏」切换按钮 */
+        .input-affix { position: relative; }
+        .input-affix input { padding-right: 58px; }
+        .input-affix .reveal {
+            position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+            padding: 5px 10px; border: none; border-radius: 8px;
+            background: transparent; color: var(--muted);
+            font-family: inherit; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: background .15s, color .15s;
+        }
+        .input-affix .reveal:hover { background: #f3f4f6; color: var(--ink); }
+
+        /* 明文展示的初始密码，附带一键复制 */
+        .secret {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 12px 14px; margin: 0 0 18px;
+            background: #fffbeb; border: 1px dashed #fcd34d; border-radius: 12px;
+        }
+        .secret .label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--amber-dark); }
+        .secret code {
+            display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 15px; font-weight: 700; letter-spacing: .04em; color: var(--ink);
+            word-break: break-all;
+        }
+        .secret .copy {
+            flex: none; padding: 8px 16px; border: 1px solid #fcd34d; border-radius: 9px;
+            background: #fff; color: var(--amber-dark);
+            font-family: inherit; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+        }
+        .secret .copy:hover { background: #fef3c7; }
+        .secret .copy.done { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+
         .switch { display: flex; align-items: center; gap: 9px; margin: 4px 0 18px; font-size: 13px; color: #374151; cursor: pointer; }
         .switch input { width: 16px; height: 16px; accent-color: var(--amber); }
 
@@ -187,5 +220,83 @@
 
     <p class="foot">torchCMS · 基于 Laravel 与 Filament 的内容管理系统</p>
 </div>
+
+<script>
+    (function () {
+        function fallbackCopy(text, done) {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.top = '-1000px';
+            document.body.appendChild(area);
+            area.select();
+
+            try { document.execCommand('copy'); done(); } catch (error) { /* 复制失败时保持原样，用户仍可手动选中 */ }
+
+            document.body.removeChild(area);
+        }
+
+        // 非 HTTPS（如通过内网 IP 访问）下 navigator.clipboard 不可用，需要回退
+        function copyText(text, done) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+
+                return;
+            }
+
+            fallbackCopy(text, done);
+        }
+
+        // 切换密码可见性
+        document.querySelectorAll('[data-reveal]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var input = document.getElementById(button.dataset.reveal);
+
+                if (!input) {
+                    return;
+                }
+
+                var showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                button.textContent = showing ? '显示' : '隐藏';
+            });
+        });
+
+        // 明文块与密码框实时同步，保证复制到的就是即将提交的密码
+        var passwordInput = document.getElementById('admin_password');
+        var passwordPlain = document.getElementById('admin_password_plain');
+
+        if (passwordInput && passwordPlain) {
+            var sync = function () { passwordPlain.textContent = passwordInput.value; };
+
+            passwordInput.addEventListener('input', sync);
+            sync();
+        }
+
+        document.querySelectorAll('[data-copy-from]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var source = document.getElementById(button.dataset.copyFrom);
+                var text = source ? source.textContent.trim() : '';
+
+                if (text === '') {
+                    return;
+                }
+
+                copyText(text, function () {
+                    var original = button.textContent;
+
+                    button.textContent = '已复制';
+                    button.classList.add('done');
+
+                    setTimeout(function () {
+                        button.textContent = original;
+                        button.classList.remove('done');
+                    }, 1800);
+                });
+            });
+        });
+    })();
+</script>
 </body>
 </html>
