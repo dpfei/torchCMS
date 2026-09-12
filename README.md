@@ -202,8 +202,133 @@ routes/web.php             安装路由 + 前台路由
 2. 确保 `storage`、`bootstrap/cache` 可写（Linux：`chmod -R 775 storage bootstrap/cache`）
 3. 执行 `php artisan storage:link`，否则后台上传的图片无法访问
 4. 使用 `npm run build` 生成静态资源（`public/build`），线上无需 Node 环境
-5. 配置 Web 服务器重写规则（Laravel 标准 `public` 目录指向）
+5. 配置 Web 服务器重写规则（Laravel 标准 `public` 目录指向）。**不要**为 `.js` / `.css` 等扩展名单独设置 `try_files $uri =404;`，那会把 Livewire 的脚本挡掉，登录页会直接不可用（宝塔默认站点模板正是这种写法），详见下方「宝塔面板部署」与常见问题
 6. 若使用队列（邮件、异步任务），`QUEUE_CONNECTION=database` 时需常驻 `php artisan queue:work`
+
+---
+
+### 宝塔面板部署
+
+宝塔的默认站点模板为 `.js` / `.css` 单独建了一个 `location`，但**只设了 `expires`、没有 `try_files` 兜底**，效果等同于「只服务物理文件」。Filament 的静态资源 `php artisan filament:assets` 发布成了物理文件，所以能正常加载，**只有 Livewire 的动态脚本会被 Nginx 返回 404**——表现为「提交登录表单后没有任何提示、直接跳回登录页」。下面这套配置可一次性避开它。
+
+#### 1. 安装运行环境
+
+在宝塔「软件商店」安装：
+
+| 软件 | 版本 | 说明 |
+| --- | --- | --- |
+| Nginx | 1.20+ | Web 服务器 |
+| PHP | 8.3 / 8.4 | `composer.json` 要求 `^8.3` |
+| MySQL | 5.7+ / MariaDB 10.3+ | 也可改用 SQLite |
+| Node.js | >= 18 | 仅在服务器上构建前端资源时需要 |
+
+PHP 需勾选 `fileinfo`、`gd`、`pdo_mysql` 扩展，建议一并勾选 `intl`、`zip`、`bcmath`。再到「PHP 设置 → 禁用函数」确认 `putenv`、`proc_open` 未被禁用，否则 Composer 与部分 Laravel 功能会报错。
+
+> 服务器内存小于 2GB 时 `composer install` 容易因内存不足被系统杀掉，可先创建 swap，或改用「本地构建后整体上传」的方式。
+
+#### 2. 创建站点
+
+「网站 → 添加站点」：
+
+- 域名：填写实际域名（如 `www.qinlangtech.com`）
+- 根目录：`/www/wwwroot/torchcms`，填**项目根目录**即可，不要直接填 `public`
+- PHP 版本：8.3+
+- 数据库：同页勾选 MySQL，记下库名 / 用户名 / 密码
+
+创建后进入「站点 → 设置」：
+
+1. **网站目录 → 运行目录** 选 `public`，并取消勾选 **防跨站攻击（open_basedir）**
+2. **伪静态**，填入：
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+
+# 覆盖宝塔默认的 js/css 规则：默认模板只有 expires 没有 try_files，
+# 会把 Livewire 的动态脚本挡成 404，导致后台登录「无提示弹回登录页」
+location ~ .*\.(js|css)?$ {
+    expires    12h;
+    access_log /dev/null;
+    error_log  /dev/null;
+    try_files  $uri /index.php?$query_string;
+}
+```
+
+> **为什么写在「伪静态」而不是「配置文件」**：宝塔在 UI 上改动站点设置（切换运行目录、更新证书等）时会按模板重新生成配置文件，手改的内容会被覆盖；伪静态则是独立文件，由 `include` 插入 server 块中较靠前的位置。Nginx 对**同类型**的 location（以上两条都是正则 `~`）按**出现顺序取第一个匹配**，所以伪静态里这条会抢先命中，模板中的旧规则自然失效。
+
+#### 3. 上传代码并安装依赖
+
+任选一种：
+
+- **Git 拉取**（推荐，便于后续更新）：在站点根目录执行 `git clone`，或在宝塔「终端」里操作
+- **压缩包上传**：本地执行 `npm run build` 后，把整个项目（含 `public/build`、`vendor`）打包上传解压，服务器上就无需 Node 与 Composer
+
+只上传源码时，在站点根目录执行：
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm install && npm run build      # 或改为本地构建后单独上传 public/build
+```
+
+#### 4. 初始化
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+在 `.env` 中配置数据库与访问地址：
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://www.qinlangtech.com
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=你的库名
+DB_USERNAME=你的库用户名
+DB_PASSWORD=你的库密码
+```
+
+`APP_URL` 必须与浏览器实际访问的协议、域名、端口**完全一致**，否则登录会不断弹回登录页（见常见问题「后台登录后又被弹回登录页」的排查第 1 条）。
+
+```bash
+php artisan migrate --seed
+php artisan storage:link
+php artisan optimize          # 缓存配置/路由/视图，加速生产环境
+```
+
+也可以跳过上面全部步骤，直接浏览器访问 `https://你的域名/install` 走网页安装向导，由向导代写 `.env`、建表并创建管理员。
+
+> 执行过 `php artisan optimize` 后，再修改 `.env` 必须重新执行 `php artisan optimize:clear` 才会生效。
+
+#### 5. 目录权限
+
+宝塔默认以 `www` 用户运行 PHP，把项目属主改为 `www` 即可：
+
+```bash
+chown -R www:www /www/wwwroot/torchcms
+chmod -R 775 storage bootstrap/cache
+```
+
+若开启「防跨站攻击（open_basedir）」，Laravel 读取项目上级目录会失败并报 500，请在第 2 步中关闭。
+
+#### 6. 启用 HTTPS
+
+「站点 → 设置 → SSL」申请证书后开启「强制 HTTPS」。宝塔会在配置文件中自动写入 `fastcgi_param HTTPS $https if_not_empty;`，PHP 侧能正确识别协议；若你手工改过配置文件，请确认这一行仍然存在，否则页面会按 `http` 去加载资源、被浏览器当作混合内容拦掉，表单会退化为普通提交。
+
+#### 7. 验证
+
+从登录页源码里找到 `livewire.min.js` 的完整地址，然后：
+
+```bash
+curl -sI "https://你的域名/livewire-xxxxxxxx/livewire.min.js?id=yyyyyyyy"
+```
+
+返回 `200` 且 `Content-Type: application/javascript` 即为正常，此时可正常登录后台。
 
 ---
 
@@ -228,11 +353,28 @@ APP_FALLBACK_LOCALE=en   # 保留英文兜底，个别未翻译的文案会回�
 这是「登录表单没有真正走 Livewire」或「Livewire 请求被拒绝」的典型表现，绝大多数情况不是密码错误（密码错 Filament 会明确提示）。按下面顺序排查：
 
 1. `APP_URL` 必须与浏览器实际访问的协议、域名、端口完全一致——装完后换过域名、加了 HTTPS 最容易踩到。改完执行 `php artisan optimize:clear`
-2. 若站点由 Nginx 终止 HTTPS，需要把协议透传给 PHP：`fastcgi_param HTTPS on;` 与 `fastcgi_param HTTP_X_FORWARDED_PROTO $scheme;`。否则页面会按 `http` 去加载 Filament/Livewire 资源，被浏览器当作混合内容拦掉，表单会退化成普通提交，一刷新就回到登录页
-3. 打开浏览器开发者工具提交一次登录：**没有** `livewire/update` 请求说明前端资源没加载（看 Console 红色报错）；状态码 `419` 说明会话没保持住；`500` 则查 `storage/logs/laravel.log`
-4. 确认会话确实写入了：`php artisan tinker --execute="echo DB::table('sessions')->count();"`，登录一次后该数字应当增加
-5. 同一域名下并存多个 Laravel 应用时，为本站设置独立的 `SESSION_COOKIE`，避免共用 `laravel-session` 互相覆盖
-6. 临时把 `.env` 的 `APP_DEBUG` 改为 `true` 再试一次，可直接看到被隐藏的真实异常
+2. **确认 Nginx 没有把 Livewire 的脚本当成静态文件挡掉**。从登录页源码里找到 `livewire.min.js` 的完整地址（形如 `/livewire-xxxxxxxx/livewire.min.js?id=yyyyyyyy`），然后：
+
+   ```bash
+   curl -sI "https://你的域名/livewire-xxxxxxxx/livewire.min.js?id=yyyyyyyy"
+   ```
+
+   若返回的 404 页面里带着 `<hr><center>nginx</center>`，说明这个 404 **不是 Laravel 给的**，而是 Nginx 对 `.js` 这类扩展名单独配了 `try_files $uri =404;`（或等价的"只服务物理文件"规则，**宝塔默认站点模板即属此类**），请求根本没到达 Laravel。Filament 的静态资源是 `php artisan filament:assets` 发布出来的物理文件，因此能正常加载，**只有 Livewire 的脚本会挂**——这也是这个问题最容易被误判成"密码错了"的原因。修法是在该 `location` 里把 `=404` 换成 `/index.php?$query_string`，或直接删掉这个 `location` 块，让请求统一走：
+
+   ```nginx
+   location / {
+       try_files $uri $uri/ /index.php?$query_string;
+   }
+   ```
+
+   改完 `nginx -t && systemctl reload nginx`，再执行一次上面的 `curl`，应当返回 `200` + `Content-Type: application/javascript`
+3. 若站点由 Nginx 终止 HTTPS，需要把协议透传给 PHP：`fastcgi_param HTTPS on;` 与 `fastcgi_param HTTP_X_FORWARDED_PROTO $scheme;`。否则页面会按 `http` 去加载 Filament/Livewire 资源，被浏览器当作混合内容拦掉，表单会退化成普通提交，一刷新就回到登录页
+4. 打开浏览器开发者工具提交一次登录：**没有** `livewire/update` 请求说明前端资源没加载（看 Console 红色报错）；状态码 `419` 说明会话没保持住；`500` 则查 `storage/logs/laravel.log`
+5. 确认会话确实写入了：`php artisan tinker --execute="echo DB::table('sessions')->count();"`，登录一次后该数字应当增加
+6. 同一域名下并存多个 Laravel 应用时，为本站设置独立的 `SESSION_COOKIE`，避免共用 `laravel-session` 互相覆盖
+7. 临时把 `.env` 的 `APP_DEBUG` 改为 `true` 再试一次，可直接看到被隐藏的真实异常
+
+> 安全提示：表单退化成原生提交时，Filament 的登录 `<form>` 没有 `method` 属性，浏览器会按 **GET** 提交，邮箱与密码会明文出现在 URL 中，并被 Nginx 的 access log 记录下来。排查出该问题后，除了修 Nginx，还应清理日志并立即更换管理员密码。
 
 **上传的图片显示 404**
 未创建软链接，执行 `php artisan storage:link`。
