@@ -16,19 +16,12 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class MediaPickerTable
 {
-    /**
-     * 兜底判断图片的扩展名：部分环境探测不出 mime_type 时仍能选到图片
-     *
-     * @var array<int, string>
-     */
-    protected const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif', 'ico'];
-
     public static function configure(Table $table): Table
     {
         return $table
             ->query(Media::query()->where('disk', 'public')->where(function (Builder $query): void {
                 $query->where('mime_type', 'like', 'image/%')
-                    ->orWhereIn('extension', self::IMAGE_EXTENSIONS);
+                    ->orWhereIn('extension', Media::IMAGE_EXTENSIONS);
             }))
             ->columns([
                 ImageColumn::make('url')

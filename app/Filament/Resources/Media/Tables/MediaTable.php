@@ -9,13 +9,16 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\IconSize;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
+
+use function Filament\Support\generate_icon_html;
 
 class MediaTable
 {
@@ -23,11 +26,6 @@ class MediaTable
     {
         return $table
             ->columns([
-                ImageColumn::make('url')
-                    ->label('预览')
-                    ->height(40)
-                    ->visible(fn (?Media $record): bool => is_null($record) || str_starts_with((string) $record->mime_type, 'image/')),
-
                 TextColumn::make('name')
                     ->label('文件名')
                     ->searchable()
@@ -44,11 +42,11 @@ class MediaTable
                     ->toggleable()
                     ->placeholder('-'),
 
+                // 地址列不摆一长串 URL，直接给出看得见的结果：图片显示缩略图，
+                // 其它文件显示文件图标，点一下都能在新标签页打开原文件
                 TextColumn::make('url')
                     ->label('地址')
-                    ->copyable()
-                    ->limit(40)
-                    ->url(fn (?Media $record): ?string => $record?->url, shouldOpenInNewTab: true),
+                    ->formatStateUsing(fn (Media $record): HtmlString => static::preview($record)),
 
                 TextColumn::make('admin.name')
                     ->label('上传人')
@@ -108,5 +106,44 @@ class MediaTable
             ->emptyStateHeading('媒体库为空')
             ->emptyStateDescription('点击右上角「新建」上传第一个文件')
             ->emptyStateIcon('heroicon-o-photo');
+    }
+
+    /**
+     * 「地址」列的内容：图片直接显示缩略图，其它文件显示文件图标
+     *
+     * 两种结果都带链接，点开就是文件的原始地址（图片的地址因此依然拿得到）。
+     * 这里返回 HtmlString 而不是纯文本，是为了在单元格里直接画出图片 / 图标。
+     */
+    protected static function preview(Media $record): HtmlString
+    {
+        $url = $record->url;
+
+        if (blank($url)) {
+            return new HtmlString('-');
+        }
+
+        $href = e($url);
+        $name = e((string) $record->name);
+        $linkStyle = 'display: inline-flex; align-items: center; color: inherit;';
+
+        if ($record->isImage()) {
+            $imageStyle = 'display: block; height: 40px; width: auto; max-width: 120px;'
+                . ' object-fit: cover; border-radius: 6px; border: 1px solid rgba(0, 0, 0, .1);';
+
+            return new HtmlString(
+                "<a href=\"{$href}\" target=\"_blank\" rel=\"noopener\" title=\"{$name}\" style=\"{$linkStyle}\">"
+                . "<img src=\"{$href}\" alt=\"{$name}\" loading=\"lazy\" style=\"{$imageStyle}\">"
+                . '</a>'
+            );
+        }
+
+        // 非图片文件给一个文件图标，标题里带上文件名，点开即可查看原文件
+        $icon = generate_icon_html(Heroicon::OutlinedDocument, size: IconSize::Large)?->toHtml() ?? '';
+
+        return new HtmlString(
+            "<a href=\"{$href}\" target=\"_blank\" rel=\"noopener\" title=\"打开文件：{$name}\" style=\"{$linkStyle}\">"
+            . $icon
+            . '</a>'
+        );
     }
 }

@@ -13,6 +13,13 @@ class Media extends Model
 {
     use HasNullDefaultsTrait;
 
+    /**
+     * 兜底识别图片的扩展名：个别环境探测不出 mime_type 时，仍按图片处理
+     *
+     * @var array<int, string>
+     */
+    public const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif', 'ico'];
+
     protected $table = 'media';
 
     protected $fillable = [
@@ -60,6 +67,18 @@ class Media extends Model
 
             return $disk->url($this->path);
         });
+    }
+
+    /**
+     * 是不是图片（mime_type 探测不出来时用扩展名兜底）
+     */
+    public function isImage(): bool
+    {
+        if (str_starts_with((string) $this->mime_type, 'image/')) {
+            return true;
+        }
+
+        return in_array(strtolower((string) $this->extension), self::IMAGE_EXTENSIONS, true);
     }
 
     /**
