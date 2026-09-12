@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\ContentCache;
 use App\Traits\HasDateTimeFormatterTrait;
+use App\Traits\HasNullDefaultsTrait;
 use App\Traits\HasSlugTrait;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class Page extends Model
 {
-    use HasDateTimeFormatterTrait, HasSlugTrait, SoftDeletes;
+    use HasDateTimeFormatterTrait, HasNullDefaultsTrait, HasSlugTrait, SoftDeletes;
 
     const STATUS_DISABLED = 0;
     const STATUS_ENABLED = 1;
@@ -70,6 +71,20 @@ class Page extends Model
         'user_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+    ];
+
+    /**
+     * 表中不允许为 NULL 的列：写入前把空值补齐
+     *
+     * @var array<string, string|int>
+     */
+    protected array $nullDefaults = [
+        'title' => '',
+        'thumb' => '',
+        'keywords' => '',
+        'sort' => 0,
+        'is_menu' => 0,
+        'status' => 1,
     ];
 
     /**

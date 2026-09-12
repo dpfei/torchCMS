@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNullDefaultsTrait;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
 {
+    use HasNullDefaultsTrait;
+
     protected $table = 'media';
 
     protected $fillable = [
@@ -25,6 +28,17 @@ class Media extends Model
     protected $casts = [
         'size' => 'integer',
         'admin_id' => 'integer',
+    ];
+
+    /**
+     * 表中不允许为 NULL 的列：写入前把空值补齐
+     *
+     * @var array<string, string|int>
+     */
+    protected array $nullDefaults = [
+        'name' => '',
+        'disk' => 'public',
+        'size' => 0,
     ];
 
     protected $appends = [

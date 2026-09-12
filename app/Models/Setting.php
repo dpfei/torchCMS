@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNullDefaultsTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Cache;
  */
 class Setting extends Model
 {
+    use HasNullDefaultsTrait;
+
     public const CACHE_KEY = 'cms.settings';
 
     /**
@@ -40,6 +43,18 @@ class Setting extends Model
 
     protected $casts = [
         'sort' => 'integer',
+    ];
+
+    /**
+     * 表中不允许为 NULL 的列：写入前把空值补齐
+     *
+     * @var array<string, string|int>
+     */
+    protected array $nullDefaults = [
+        'label' => '',
+        'type' => self::TYPE_TEXT,
+        'group' => 'general',
+        'sort' => 0,
     ];
 
     protected static function booted(): void

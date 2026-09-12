@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\ContentCache;
 use App\Traits\HasDateTimeFormatterTrait;
+use App\Traits\HasNullDefaultsTrait;
 use App\Traits\HasSlugTrait;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 
 class News extends Model
 {
-    use HasDateTimeFormatterTrait, HasFactory, HasSlugTrait, SoftDeletes;
+    use HasDateTimeFormatterTrait, HasFactory, HasNullDefaultsTrait, HasSlugTrait, SoftDeletes;
 
     const STATUS_DISABLED = 0;
     const STATUS_ENABLED = 1;
@@ -80,6 +81,26 @@ class News extends Model
         'user_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+    ];
+
+    /**
+     * 表中不允许为 NULL 的列：写入前把空值补齐
+     *
+     * input_time 不在此列，它的空值由 creating 钩子填成当前时间。
+     *
+     * @var array<string, string|int>
+     */
+    protected array $nullDefaults = [
+        'cat_id' => 0,
+        'title' => '',
+        'thumb' => '',
+        'keywords' => '',
+        'external_url' => '',
+        'sort' => 0,
+        'status' => 1,
+        'readpoint' => 0,
+        'copyfrom' => '',
+        'views' => 0,
     ];
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ContentCache;
+use App\Traits\HasNullDefaultsTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class MenuItem extends Model
 {
+    use HasNullDefaultsTrait;
+
     /**
      * 菜单位置
      */
@@ -56,6 +59,21 @@ class MenuItem extends Model
         'target_id' => 'integer',
         'sort' => 'integer',
         'status' => 'integer',
+    ];
+
+    /**
+     * 表中不允许为 NULL 的列：写入前把空值补齐
+     *
+     * @var array<string, string|int>
+     */
+    protected array $nullDefaults = [
+        'location' => self::LOCATION_HEADER,
+        'label' => '',
+        'type' => self::TYPE_CUSTOM,
+        'url' => '',
+        'target' => self::TARGET_SELF,
+        'sort' => 0,
+        'status' => 1,
     ];
 
     protected static function booted(): void
