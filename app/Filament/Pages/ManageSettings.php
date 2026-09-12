@@ -2,14 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Actions\PickFromMediaLibraryAction;
+use App\Filament\Forms\Components\MediaLibraryFileUpload;
 use App\Filament\Resources\Settings\SettingResource;
 use App\Models\Admin;
 use App\Models\Setting;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -100,13 +99,12 @@ class ManageSettings extends Page
                 ->label($label)
                 ->rows(3),
 
-            Setting::TYPE_IMAGE => FileUpload::make($setting->key)
+            Setting::TYPE_IMAGE => MediaLibraryFileUpload::make($setting->key)
                 ->label($label)
                 ->image()
                 ->disk('public')
                 ->directory('settings')
-                ->maxSize(2048)
-                ->hintAction(PickFromMediaLibraryAction::hint()),
+                ->maxSize(2048),
 
             Setting::TYPE_SWITCH => Toggle::make($setting->key)
                 ->label($label),

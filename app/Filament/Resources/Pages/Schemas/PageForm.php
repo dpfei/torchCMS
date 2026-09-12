@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\Pages\Schemas;
 
-use App\Filament\Actions\PickFromMediaLibraryAction;
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Forms\Components\MediaLibraryFileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -28,13 +27,12 @@ class PageForm
                     ->helperText('留空将根据标题自动生成（中文自动转拼音），前台地址形如 /about')
                     ->columnSpanFull(),
 
-                FileUpload::make('thumb')
+                MediaLibraryFileUpload::make('thumb')
                     ->label('封面图')
                     ->image()
                     ->disk('public')
                     ->directory('pages')
-                    ->maxSize(2048)
-                    ->hintAction(PickFromMediaLibraryAction::hint()),
+                    ->maxSize(2048),
 
                 TextInput::make('keywords')
                     ->label('SEO 关键词')

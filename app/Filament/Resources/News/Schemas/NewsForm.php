@@ -2,13 +2,12 @@
 
 namespace App\Filament\Resources\News\Schemas;
 
-use App\Filament\Actions\PickFromMediaLibraryAction;
+use App\Filament\Forms\Components\MediaLibraryFileUpload;
 use App\Models\Category;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -32,14 +31,13 @@ class NewsForm
                     ->unique(ignoreRecord: true)
                     ->helperText('留空将根据标题自动生成（中文自动转拼音），前台地址形如 /news/别名')
                     ->columnSpanFull(),
-                FileUpload::make('thumb')
+                MediaLibraryFileUpload::make('thumb')
                     ->label(__('thumb'))
                     ->image()
                     ->disk('public')
                     ->directory('news')
                     ->maxSize(2048)
-                    ->required()
-                    ->hintAction(PickFromMediaLibraryAction::hint()),
+                    ->required(),
                 TextInput::make('keywords')
                     ->label(__('keywords'))
                     ->required(),

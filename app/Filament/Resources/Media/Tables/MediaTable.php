@@ -3,14 +3,19 @@
 namespace App\Filament\Resources\Media\Tables;
 
 use App\Models\Media;
+use App\Support\MediaUsage;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 
 class MediaTable
 {
@@ -54,6 +59,14 @@ class MediaTable
                     ->label(__('created_at'))
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
+
+                TextColumn::make('usage_count')
+                    ->label('引用')
+                    ->state(fn (Media $record): int => MediaUsage::count($record))
+                    ->formatStateUsing(fn (int $state): string => $state > 0 ? "{$state} 处" : '未引用')
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'warning' : 'gray')
+                    ->tooltip('点右侧「引用情况」可以看到具体是哪些内容在用'),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
@@ -70,12 +83,26 @@ class MediaTable
                         : $query),
             ])
             ->recordActions([
+                Action::make('usages')
+                    ->label('引用情况')
+                    ->icon(Heroicon::OutlinedLink)
+                    ->modalHeading(fn (Media $record): string => '引用情况：' . $record->name)
+                    ->modalContent(fn (Media $record): View => view('filament.media-usages', [
+                        'usages' => MediaUsage::for($record),
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('关闭'),
+
                 EditAction::make(),
-                DeleteAction::make(),
+
+                // 删除前把「谁在用这个文件」说清楚，避免误删导致前台图片挂掉
+                DeleteAction::make()
+                    ->modalDescription(fn (?Media $record): string => MediaUsage::deleteWarning($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->modalDescription(fn (Collection $records): string => MediaUsage::bulkDeleteWarning($records)),
                 ]),
             ])
             ->emptyStateHeading('媒体库为空')

@@ -2,9 +2,8 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
-use App\Filament\Actions\PickFromMediaLibraryAction;
+use App\Filament\Forms\Components\MediaLibraryFileUpload;
 use App\Models\Category;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -36,13 +35,12 @@ class CategoryForm
                     ->unique(ignoreRecord: true)
                     ->helperText('留空将根据栏目名称自动生成（中文自动转拼音）'),
 
-                FileUpload::make('thumb')
+                MediaLibraryFileUpload::make('thumb')
                     ->label('缩略图')
                     ->image()
                     ->disk('public')
                     ->directory('categories')
-                    ->maxSize(1024)
-                    ->hintAction(PickFromMediaLibraryAction::hint()),
+                    ->maxSize(1024),
 
                 Textarea::make('description')
                     ->label('描述')
