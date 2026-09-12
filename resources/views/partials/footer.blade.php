@@ -9,12 +9,14 @@
             </div>
 
             <div>
-                <h3 class="text-sm font-semibold text-gray-900">栏目导航</h3>
+                <h3 class="text-sm font-semibold text-gray-900">网站导航</h3>
                 <ul class="mt-3 space-y-2 text-sm text-gray-500">
-                    @foreach ($categories ?? [] as $category)
+                    @foreach ($menu ?? [] as $item)
                         <li>
-                            <a href="{{ route('category.show', $category) }}" class="transition hover:text-blue-600">
-                                {{ $category->cat_name }}
+                            <a href="{{ $item->link }}"
+                               @if ($item->target === '_blank') target="_blank" rel="noopener" @endif
+                               class="transition hover:text-blue-600">
+                                {{ $item->label }}
                             </a>
                         </li>
                     @endforeach

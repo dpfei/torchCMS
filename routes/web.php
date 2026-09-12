@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PageController;
 use App\Support\Captcha;
 use Illuminate\Support\Facades\Route;
 
@@ -28,3 +29,8 @@ Route::get('/captcha/admin-login', function () {
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('category.show');
 Route::get('/news/{news:slug}', [NewsController::class, 'show'])->name('news.show');
+
+// 单页（如 /about）：挂在路由兜底上，只有上面这些路由全都没命中时才会执行。
+// 这样单页可以占用根级短地址，又不会抢走 /admin、/install、/livewire-* 等入口，
+// 也不受路由注册顺序影响 —— Laravel 保证兜底路由最后参与匹配。
+Route::fallback([PageController::class, 'show'])->name('page.show');

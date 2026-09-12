@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\News;
 use App\Support\ContentCache;
 use Illuminate\View\View;
@@ -11,11 +10,6 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $categories = ContentCache::remember(
-            'categories.menus',
-            fn () => Category::query()->menus()->get()
-        );
-
         $slides = ContentCache::remember(
             'news.slides',
             fn () => News::query()
@@ -48,6 +42,6 @@ class HomeController extends Controller
                 ->get()
         );
 
-        return view('home', compact('categories', 'slides', 'latest', 'recommended'));
+        return view('home', compact('slides', 'latest', 'recommended'));
     }
 }

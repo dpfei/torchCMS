@@ -8,7 +8,6 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -53,9 +52,6 @@ class CategoriesTable
                     ->label(__('sort'))
                     ->sortable(),
 
-                ToggleColumn::make('is_menu')
-                    ->label(__('category.is_menu')),
-
                 TextColumn::make('created_at')
                     ->label(__('created_at'))
                     ->dateTime('Y-m-d H:i:s')
@@ -66,14 +62,6 @@ class CategoriesTable
                     ->label(__('category.parent_id'))
                     ->options(Category::getOptionList())
                     ->placeholder('全部分类'),
-
-                SelectFilter::make('is_menu')
-                    ->label(__('category.is_menu'))
-                    ->options([
-                        1 => '是',
-                        0 => '否',
-                    ])
-                    ->placeholder('全部'),
             ])
             ->recordActions([
                 EditAction::make()->label('编辑'),

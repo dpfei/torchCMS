@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Settings\SettingResource;
 use App\Models\Admin;
 use App\Models\Setting;
 use BackedEnum;
@@ -10,16 +11,25 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Collection;
 use UnitEnum;
 
+/**
+ * 系统设置：按分组编辑各个设置项的值。
+ *
+ * 表单是按 settings 表动态渲染的，新增配置项不需要再改这个文件；
+ * 「有哪些配置项」则由「设置项管理」维护。
+ */
 class ManageSettings extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
@@ -31,6 +41,8 @@ class ManageSettings extends Page
     protected static ?string $navigationLabel = '系统设置';
 
     protected static ?string $title = '系统设置';
+
+    protected ?string $subheading = '新增或删除配置项，请前往「设置项管理」';
 
     /**
      * @var array<string, mixed>|null
@@ -51,79 +63,79 @@ class ManageSettings extends Page
 
     public function form(Schema $schema): Schema
     {
+        $sections = Setting::grouped()
+            ->map(fn (Collection $items, string $group): Section => Section::make($group !== '' ? $group : '其他设置')
+                ->schema($items->map(fn (Setting $setting): Component => $this->fieldFor($setting))->all())
+                ->columns(2))
+            ->values()
+            ->all();
+
         return $schema
-            ->components([
-                Section::make('基础信息')
-                    ->description('站点名称、Logo 以及 SEO 相关信息')
-                    ->schema([
-                        TextInput::make('site_name')
-                            ->label('站点名称')
-                            ->required()
-                            ->maxLength(100),
-
-                        TextInput::make('site_url')
-                            ->label('站点地址')
-                            ->url()
-                            ->maxLength(255),
-
-                        FileUpload::make('site_logo')
-                            ->label('站点 Logo')
-                            ->image()
-                            ->disk('public')
-                            ->directory('settings')
-                            ->maxSize(2048)
-                            ->columnSpanFull(),
-
-                        TextInput::make('site_keywords')
-                            ->label('SEO 关键词')
-                            ->maxLength(255)
-                            ->helperText('多个关键词用英文逗号分隔'),
-
-                        TextInput::make('contact_email')
-                            ->label('联系邮箱')
-                            ->email()
-                            ->maxLength(255),
-
-                        Textarea::make('site_description')
-                            ->label('站点描述')
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-
-                Section::make('联系方式与备案')
-                    ->schema([
-                        TextInput::make('contact_phone')
-                            ->label('联系电话')
-                            ->maxLength(50),
-
-                        TextInput::make('icp')
-                            ->label('ICP 备案号')
-                            ->maxLength(100),
-
-                        TextInput::make('copyright')
-                            ->label('版权信息')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-            ])
+            ->components($sections)
             ->statePath('data');
     }
 
     public function save(): void
     {
-        $state = $this->form->getState();
-
-        foreach ($state as $key => $value) {
-            Setting::set($key, is_array($value) ? ($value[0] ?? null) : $value);
+        foreach ($this->form->getState() as $key => $value) {
+            Setting::set($key, $this->normalizeValue($value));
         }
 
         Notification::make()
             ->title('设置已保存')
             ->success()
             ->send();
+    }
+
+    /**
+     * 按设置项的输入类型生成对应控件
+     */
+    protected function fieldFor(Setting $setting): Component
+    {
+        $label = $setting->label !== '' ? $setting->label : $setting->key;
+
+        return match ($setting->type) {
+            Setting::TYPE_TEXTAREA => Textarea::make($setting->key)
+                ->label($label)
+                ->rows(3),
+
+            Setting::TYPE_IMAGE => FileUpload::make($setting->key)
+                ->label($label)
+                ->image()
+                ->disk('public')
+                ->directory('settings')
+                ->maxSize(2048),
+
+            Setting::TYPE_SWITCH => Toggle::make($setting->key)
+                ->label($label),
+
+            Setting::TYPE_EMAIL => TextInput::make($setting->key)
+                ->label($label)
+                ->email(),
+
+            Setting::TYPE_URL => TextInput::make($setting->key)
+                ->label($label)
+                ->url(),
+
+            default => TextInput::make($setting->key)
+                ->label($label),
+        };
+    }
+
+    /**
+     * 表单值与存储值对齐：开关存 1/0，上传控件只取第一个文件
+     */
+    protected function normalizeValue(mixed $value): mixed
+    {
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_array($value)) {
+            return $value[0] ?? '';
+        }
+
+        return $value ?? '';
     }
 
     /**
@@ -135,6 +147,13 @@ class ManageSettings extends Page
             Action::make('save')
                 ->label('保存设置')
                 ->submit('save'),
+
+            Action::make('manage')
+                ->label('管理设置项')
+                ->icon('heroicon-o-adjustments-horizontal')
+                ->color('gray')
+                ->url(fn (): string => SettingResource::getUrl())
+                ->visible(fn (): bool => SettingResource::canViewAny()),
         ];
     }
 

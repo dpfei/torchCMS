@@ -14,13 +14,11 @@
             </a>
 
             <nav class="hidden items-center gap-6 md:flex">
-                <a href="{{ route('home') }}" class="text-sm font-medium text-gray-600 transition hover:text-blue-600">
-                    首页
-                </a>
-                @foreach ($categories ?? [] as $category)
-                    <a href="{{ route('category.show', $category) }}"
+                @foreach ($menu ?? [] as $item)
+                    <a href="{{ $item->link }}"
+                       @if ($item->target === '_blank') target="_blank" rel="noopener" @endif
                        class="text-sm font-medium text-gray-600 transition hover:text-blue-600">
-                        {{ $category->cat_name }}
+                        {{ $item->label }}
                     </a>
                 @endforeach
             </nav>
@@ -32,10 +30,11 @@
         </div>
 
         <nav class="flex gap-4 overflow-x-auto pb-3 md:hidden">
-            <a href="{{ route('home') }}" class="whitespace-nowrap text-sm text-gray-600">首页</a>
-            @foreach ($categories ?? [] as $category)
-                <a href="{{ route('category.show', $category) }}" class="whitespace-nowrap text-sm text-gray-600">
-                    {{ $category->cat_name }}
+            @foreach ($menu ?? [] as $item)
+                <a href="{{ $item->link }}"
+                   @if ($item->target === '_blank') target="_blank" rel="noopener" @endif
+                   class="whitespace-nowrap text-sm text-gray-600">
+                    {{ $item->label }}
                 </a>
             @endforeach
         </nav>

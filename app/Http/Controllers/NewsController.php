@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\News;
 use App\Support\ContentCache;
 use Illuminate\View\View;
@@ -27,11 +26,6 @@ class NewsController extends Controller
                 ->get()
         );
 
-        $categories = ContentCache::remember(
-            'categories.menus',
-            fn () => Category::query()->menus()->get()
-        );
-
-        return view('news', compact('news', 'related', 'categories'));
+        return view('news', compact('news', 'related'));
     }
 }

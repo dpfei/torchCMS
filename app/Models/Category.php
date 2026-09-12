@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Support\ContentCache;
 use App\Traits\HasDateTimeFormatterTrait;
 use App\Traits\HasSlugTrait;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -86,14 +85,6 @@ class Category extends Model
     public function news(): HasMany
     {
         return $this->hasMany(News::class, 'cat_id', 'id');
-    }
-
-    /**
-     * 仅展示在前台菜单的栏目
-     */
-    public function scopeMenus(Builder $query): Builder
-    {
-        return $query->where('is_menu', 1)->orderBy('sort');
     }
 
     /**

@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\MenuItem;
 use App\Models\News;
+use App\Models\Page;
 use Illuminate\Database\Seeder;
 
 class DemoContentSeeder extends Seeder
@@ -15,12 +17,12 @@ class DemoContentSeeder extends Seeder
     {
         $company = Category::query()->firstOrCreate(
             ['cat_name' => '公司新闻'],
-            ['sort' => 1, 'is_menu' => 1, 'description' => '公司动态、活动与公告发布。']
+            ['sort' => 1, 'description' => '公司动态、活动与公告发布。']
         );
 
         $tech = Category::query()->firstOrCreate(
             ['cat_name' => '技术分享'],
-            ['sort' => 2, 'is_menu' => 1, 'description' => 'Web 开发、架构设计与工程实践经验分享。']
+            ['sort' => 2, 'description' => 'Web 开发、架构设计与工程实践经验分享。']
         );
 
         $items = [
@@ -85,6 +87,45 @@ class DemoContentSeeder extends Seeder
                 ['title' => $item['title']],
                 $item + ['status' => News::STATUS_ENABLED]
             );
+        }
+
+        // 单页演示：不归属任何栏目，直接以 /about 访问
+        $about = Page::query()->firstOrCreate(
+            ['title' => '关于我们'],
+            [
+                'slug' => 'about',
+                'keywords' => '关于我们,公司简介',
+                'description' => '了解我们的团队、业务范围与联系方式。',
+                'content' => '<p>我们是一支专注于企业数字化的团队。</p><h2>我们能做什么</h2><ul><li>企业官网建设</li><li>内容管理系统定制</li><li>技术支持与运维</li></ul><p>欢迎通过页面底部的联系方式与我们联系。</p>',
+                'sort' => 1,
+                'status' => Page::STATUS_ENABLED,
+            ]
+        );
+
+        // 演示菜单：把栏目与单页挂到页头、页脚导航上
+        $menuItems = [
+            ['label' => '首页', 'type' => MenuItem::TYPE_CUSTOM, 'target_id' => null, 'url' => '/'],
+            ['label' => $company->cat_name, 'type' => MenuItem::TYPE_CATEGORY, 'target_id' => $company->id, 'url' => ''],
+            ['label' => $tech->cat_name, 'type' => MenuItem::TYPE_CATEGORY, 'target_id' => $tech->id, 'url' => ''],
+            ['label' => $about->title, 'type' => MenuItem::TYPE_PAGE, 'target_id' => $about->id, 'url' => ''],
+        ];
+
+        foreach ([MenuItem::LOCATION_HEADER, MenuItem::LOCATION_FOOTER] as $location) {
+            foreach ($menuItems as $sort => $menuItem) {
+                MenuItem::query()->firstOrCreate(
+                    [
+                        'location' => $location,
+                        'type' => $menuItem['type'],
+                        'target_id' => $menuItem['target_id'],
+                        'url' => $menuItem['url'],
+                    ],
+                    [
+                        'label' => $menuItem['label'],
+                        'sort' => $sort,
+                        'status' => MenuItem::STATUS_ENABLED,
+                    ]
+                );
+            }
         }
     }
 }

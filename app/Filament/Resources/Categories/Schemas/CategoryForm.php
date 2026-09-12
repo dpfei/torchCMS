@@ -8,7 +8,6 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class CategoryForm
@@ -52,10 +51,6 @@ class CategoryForm
                     ->label('排序')
                     ->numeric()
                     ->default(0),
-
-                Toggle::make('is_menu')
-                    ->label('是否显示在菜单')
-                    ->default(true),
             ]);
     }
 }

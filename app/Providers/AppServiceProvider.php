@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use App\Auth\SaltedEloquentUserProvider;
 use App\Models\Admin;
+use App\Models\MenuItem;
+use App\Support\Navigation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -35,6 +38,16 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return null;
+        });
+
+        // 页头与页脚的导航统一取自「导航菜单」，
+        // 集中在这里注入，控制器不必各自查一遍
+        View::composer('partials.header', function (\Illuminate\View\View $view): void {
+            $view->with('menu', Navigation::items(MenuItem::LOCATION_HEADER));
+        });
+
+        View::composer('partials.footer', function (\Illuminate\View\View $view): void {
+            $view->with('menu', Navigation::items(MenuItem::LOCATION_FOOTER));
         });
     }
 }

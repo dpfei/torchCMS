@@ -19,10 +19,12 @@ class RolePermissionSeeder extends Seeder
     protected array $resources = [
         'news' => ['view', 'create', 'update', 'delete'],
         'category' => ['view', 'create', 'update', 'delete'],
+        'page' => ['view', 'create', 'update', 'delete'],
+        'menu' => ['view', 'create', 'update', 'delete'],
         'media' => ['view', 'create', 'update', 'delete'],
         'role' => ['view', 'create', 'update', 'delete'],
         'admin' => ['view', 'create', 'update', 'delete'],
-        'setting' => ['view', 'update'],
+        'setting' => ['view', 'create', 'update', 'delete'],
     ];
 
     public function run(): void
@@ -59,6 +61,8 @@ class RolePermissionSeeder extends Seeder
                 ->whereIn('name', [
                     'view_news', 'create_news', 'update_news',
                     'view_category', 'create_category', 'update_category',
+                    'view_page', 'create_page', 'update_page',
+                    'view_menu', 'create_menu', 'update_menu',
                     'view_media', 'create_media', 'update_media',
                 ])
                 ->get()

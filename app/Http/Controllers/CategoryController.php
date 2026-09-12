@@ -51,11 +51,6 @@ class CategoryController extends Controller
             ]
         );
 
-        $categories = ContentCache::remember(
-            'categories.menus',
-            fn () => Category::query()->menus()->get()
-        );
-
-        return view('category', compact('category', 'news', 'categories'));
+        return view('category', compact('category', 'news'));
     }
 }
