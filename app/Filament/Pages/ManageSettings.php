@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Actions\PickFromMediaLibraryAction;
 use App\Filament\Resources\Settings\SettingResource;
 use App\Models\Admin;
 use App\Models\Setting;
@@ -104,7 +105,8 @@ class ManageSettings extends Page
                 ->image()
                 ->disk('public')
                 ->directory('settings')
-                ->maxSize(2048),
+                ->maxSize(2048)
+                ->hintAction(PickFromMediaLibraryAction::hint()),
 
             Setting::TYPE_SWITCH => Toggle::make($setting->key)
                 ->label($label),

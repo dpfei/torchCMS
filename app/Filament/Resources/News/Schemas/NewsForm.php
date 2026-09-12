@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News\Schemas;
 
+use App\Filament\Actions\PickFromMediaLibraryAction;
 use App\Models\Category;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -37,7 +38,8 @@ class NewsForm
                     ->disk('public')
                     ->directory('news')
                     ->maxSize(2048)
-                    ->required(),
+                    ->required()
+                    ->hintAction(PickFromMediaLibraryAction::hint()),
                 TextInput::make('keywords')
                     ->label(__('keywords'))
                     ->required(),

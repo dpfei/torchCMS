@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
+use App\Filament\Actions\PickFromMediaLibraryAction;
 use App\Models\Category;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -40,7 +41,8 @@ class CategoryForm
                     ->image()
                     ->disk('public')
                     ->directory('categories')
-                    ->maxSize(1024),
+                    ->maxSize(1024)
+                    ->hintAction(PickFromMediaLibraryAction::hint()),
 
                 Textarea::make('description')
                     ->label('描述')

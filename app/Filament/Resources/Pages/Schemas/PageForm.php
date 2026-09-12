@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Pages\Schemas;
 
+use App\Filament\Actions\PickFromMediaLibraryAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
@@ -32,7 +33,8 @@ class PageForm
                     ->image()
                     ->disk('public')
                     ->directory('pages')
-                    ->maxSize(2048),
+                    ->maxSize(2048)
+                    ->hintAction(PickFromMediaLibraryAction::hint()),
 
                 TextInput::make('keywords')
                     ->label('SEO 关键词')
